@@ -1,14 +1,9 @@
 #!/usr/bin/env bash
 
-if  [ $# -eq 0 ] || [ $1 = '-h' ] ; then
-  echo 'Usage: upnpchannelchanger STB_IP Channel#'
-  echo 'Example: upnpchannelchanger 10.0.0.123 9475'
-
-  exit 0
-fi
-
 # Basic Settings
-HOST=$1
+COMMAND=$1
+HOST=$2
+CHANNEL=$3
 PORT='49200'
 QUERY='upnp/control/EchoSTB2'
 SERVICE='urn:schemas-echostar-com:service:EchoSTB:2'
@@ -19,7 +14,7 @@ WAKE_ARGS='<Tuner>0</Tuner>'
 
 #Action to change the channel
 CHANGE_ACTION='SetChannel'
-CHANGE_ARGS="<Tuner>0</Tuner><Channel>$2</Channel>"
+CHANGE_ARGS="<Tuner>0</Tuner><Channel>${CHANNEL}</Channel>"
 
 #Disable Inactivity Standby
 INACTIVE_ACTION='InactivityStandby'
@@ -57,25 +52,61 @@ $MESSAGE
 EOF
 
 	#Uncomment to debug
-	#cat <&6
+	cat <&6
 
 	exec 6<&-
 	exec 6>&-
 }
 
-#Wake the STB up
-upnp_send $HOST $WAKE_ACTION $WAKE_ARGS
 
-#Wait for it to wake up
-sleep .7
+# Main program execution begin...now...
 
-#Change the channel
-upnp_send $HOST $CHANGE_ACTION $CHANGE_ARGS
 
-sleep .1
+if  [ $# -eq 0 ] || [ ${COMMAND} = '-h' ] ; then
+  echo 'Usage: upnpchannelchanger COMMAND STB_IP Channel#'
+  echo 'Example: upnpchannelchanger --change 10.0.0.123 9475'
 
-#Disabled the inactivity timeout
-upnp_send $HOST $INACTIVE_ACTION $INACTIVE_ARGS
+  echo 'Example: upnpchannelchanger --wakeup 10.0.0.123'
+  echo 'Example: upnpchannelchanger --disable-inactivity 10.0.0.123'
 
-#Sleep to allow the STB time to settle before the tuner tries to access (HD-PVR)
-sleep .1
+  exit 0
+fi
+
+if [ "${COMMAND}" == "--wakeup" ]; then
+  echo Waking up the STB...
+  #Wake the STB up
+  upnp_send $HOST $WAKE_ACTION $WAKE_ARGS
+  echo It has risen.
+  exit 0
+fi
+
+if [ "${COMMAND}" == "--disable-inactivity" ]; then
+  echo Disabling inactivity timeout...
+  #Disabled the inactivity timeout
+  upnp_send $HOST $INACTIVE_ACTION $INACTIVE_ARGS
+  echo Command sent, we should no longer timeout.
+  exit 0
+fi
+
+if [ "${COMMAND}" == "--change" ]; then
+  echo 'Time to change the to channel ${CHANNEL}'
+
+  #Wake the STB up
+  upnp_send $HOST $WAKE_ACTION $WAKE_ARGS
+
+  #Wait for it to wake up
+  sleep .7
+
+  #Change the channel
+  upnp_send $HOST $CHANGE_ACTION $CHANGE_ARGS
+
+  sleep .1
+
+  #Disabled the inactivity timeout
+  upnp_send $HOST $INACTIVE_ACTION $INACTIVE_ARGS
+
+  #Sleep to allow the STB time to settle before the tuner tries to access (HD-PVR)
+  sleep .1
+
+  echo 'Done changing the channel.'
+fi
