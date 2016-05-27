@@ -103,6 +103,17 @@ if [ "${COMMAND}" == "--disable-inactivity" ]; then
   exit 0
 fi
 
+if [ "${COMMAND}" == "--disable-updates" ]; then
+  echo Disabling updates...
+
+  ACTION='Updates'
+  ARGS='<Enable_disable>Disable</Enable_disable><hour>07</hour><min>58</min><am_or_pm>am</am_or_pm>'
+
+  upnp_send ${HOST} ${ACTION} ${ARGS}
+  echo Command sent, no mo updates.
+  exit 0
+fi
+
 if [ "${COMMAND}" == "--change" ]; then
   echo 'Time to change the to channel ${CHANNEL}'
 
