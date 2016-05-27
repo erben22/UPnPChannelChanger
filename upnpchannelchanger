@@ -36,6 +36,10 @@ s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
 </s:Body>
 </s:Envelope>'
 
+        echo Message is:
+        echo ${MESSAGE}
+        echo Message size is ${#MESSAGE}
+
 	exec 6<>/dev/tcp/$HOST/$PORT || {
 		echo "error: can not connect to $HOST:$PORT" >&2
 		return 1
@@ -61,8 +65,19 @@ EOF
 
 # Main program execution begin...now...
 
+if [ "${COMMAND}" = "--custom" ]; then
+  echo "Executing a custom command now..."
 
-if  [ $# -eq 0 ] || [ ${COMMAND} = '-h' ] ; then
+  ACTION='GetChannelInfo'
+  ARGS='<Tuner>0</Tuner>'
+
+  upnp_send ${HOST} ${ACTION} ${ARGS}
+  echo "Done executing a custom command."
+  exit 0
+fi
+
+
+if [ $# -eq 0 ] || [ ${COMMAND} = '-h' ] ; then
   echo 'Usage: upnpchannelchanger COMMAND STB_IP Channel#'
   echo 'Example: upnpchannelchanger --change 10.0.0.123 9475'
 
